@@ -13,20 +13,27 @@ import numpy as np
 from sklearn.neighbors import KNeighborsClassifier
 from flask import Flask, jsonify, request
 
+import pickle  # pickle을 사용해 모델 파일 불러오기
+
 app = Flask(__name__)
+
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+MODEL_PATH = os.path.join(BASE_DIR, '../model/knn_model.pkl')
+
+# 모델 불러오기
+try:
+    with open(MODEL_PATH, 'rb') as f:
+        knn = pickle.load(f)
+
+except Exception as e:
+    print(f"모델 불러오기 오류 발생: {e}")
+    exit()  # 모델을 불러오지 못하면 프로그램 종료
 
 @app.route('/hand-recognition', methods=['POST'])
 def hand_recognition():
     rsp = {
         0:'rock', 5 : 'paper', 9: 'scissors', 10:'ok'
     }
-
-    # 동작 인식 모델 만들기(knn 모델)
-    file = np.genfromtxt('hand_recognition\data\gesture_train.csv', delimiter = ',')
-    X = file[:, :-1].astype(np.float32)
-    y = file[:, -1].astype(np.float32)
-    knn = KNeighborsClassifier(n_neighbors=3)
-    knn.fit(X, y)
 
     # mediapipe 사용하기
     # 손 찾기 관련 기능 불러오기
