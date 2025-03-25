@@ -12,11 +12,12 @@ import mediapipe as mp
 import numpy as np
 from sklearn.neighbors import KNeighborsClassifier
 from flask import Flask, jsonify, request
-
+from flask_cors import CORS
 import pickle  # pickle을 사용해 모델 파일 불러오기
+import time
 
 app = Flask(__name__)
-
+CORS(app)
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 MODEL_PATH = os.path.join(BASE_DIR, '../model/knn_model.pkl')
 
@@ -35,6 +36,11 @@ def hand_recognition():
         0:'rock', 5 : 'paper', 9: 'scissors', 10:'ok'
     }
 
+    # 인식 지속 시간 설정 (초)
+    REQUIRED_DURATION = 3.0  
+    last_gesture = None
+    start_time = None
+
     # mediapipe 사용하기
     # 손 찾기 관련 기능 불러오기
     mp_hands = mp.solutions.hands
@@ -43,8 +49,9 @@ def hand_recognition():
     # 손 찾기 관련 세부 설정
     hands = mp_hands.Hands(
         max_num_hands = 1, # 탐지할 최대 손의 갯수
-        min_detection_confidence = 0.5, # 표시할 손의 최소 정확도
-        min_tracking_confidence = 0.5 # 표시할 관절의 최소 정확도
+        model_complexity=0,
+        min_detection_confidence = 0.7, # 표시할 손의 최소 정확도
+        min_tracking_confidence = 0.7 # 표시할 관절의 최소 정확도
     )
 
     video = cv2.VideoCapture(0)
@@ -100,24 +107,45 @@ def hand_recognition():
                 # 구한 각도를 knn 모델에 예측시키기
                 # 학습을 위한 타입 변경(2차원 array)
                 X_pred = np.array([angle], dtype = np.float32)
-                results = knn.predict(X_pred)
-                idx = int(results)
                 
-                # 인식된 제스쳐 표현하기
-                img_x = img.shape[1]
-                img_y = img.shape[0]
-                hand_x = res.landmark[0].x
-                hand_y = res.landmark[0].y
-                
-                # 가위, 바위, 보, 오케이 동작 인식하기
-                if idx in rsp.keys() :
-                    cv2.putText(img, text = rsp[idx].upper(),
-                            org = (int(hand_x * img_x), int(hand_y * img_y)+20),
-                            fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color=(255, 255, 255), thickness=2
-                        )
-                    print(idx)
-                
-                mp_drawing.draw_landmarks(img, res, mp_hands.HAND_CONNECTIONS)
+                try:
+                    results = knn.predict(X_pred)
+                    idx = int(results[0])  # 배열의 첫 번째 값 추출 후 변환
+                    
+                    # 인식된 제스쳐 표현하기
+                    img_x = img.shape[1]
+                    img_y = img.shape[0]
+                    hand_x = res.landmark[0].x
+                    hand_y = res.landmark[0].y
+                    # 가위, 바위, 보, 오케이 동작 인식하기
+                    if idx in rsp.keys() :
+                        cv2.putText(img, text = rsp[idx].upper(),
+                                org = (int(hand_x * img_x), int(hand_y * img_y)+20),
+                                fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color=(255, 255, 255), thickness=2
+                            )
+                    mp_drawing.draw_landmarks(img, res, mp_hands.HAND_CONNECTIONS)
+
+                    if idx in rsp.keys():  # 인식된 손 모양이 rsp에 있는 경우만 실행
+                        current_gesture = rsp[idx]
+                        
+                        # 동일한 손 모양이 지속되면 시간을 측정하기 시작
+                        if last_gesture == current_gesture:
+                            if start_time is None:  # 타이머가 설정되지 않은 경우 설정
+                                start_time = time.time()
+                            elif time.time() - start_time >= REQUIRED_DURATION:
+                                print(f"{current_gesture} finish!! ")
+                                video.release()
+                                cv2.destroyAllWindows()
+                                with app.app_context():  # Flask 앱 컨텍스트 활성화
+                                    return jsonify({"result": current_gesture, "index": idx})
+                        else:
+                            # 새로운 손 모양이 인식된 경우 타이머 초기화
+                            last_gesture = current_gesture
+                            start_time = time.time()  # 새로운 손 모양으로 타이머 리셋
+                        
+                except Exception as e:
+                    print(f"error : {e}")
+                    continue
                 
         k = cv2.waitKey(30)
         if k == ord('q') :
@@ -128,4 +156,4 @@ def hand_recognition():
     cv2.destroyAllWindows()
 
 if __name__ == "__main__":
-    hand_recognition() 
+    app.run(port=5000)

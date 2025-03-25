@@ -24,14 +24,6 @@ if not os.path.exists(DATA_PATH):
     raise FileNotFoundError(f"데이터 파일이 존재하지 않습니다: {DATA_PATH}")
 
 # 데이터 파일 불러오기
-try:
-    file = np.genfromtxt(DATA_PATH, delimiter=',')
-    X = file[:, :-1].astype(np.float32)
-    y = file[:, -1].astype(np.float32)
-except Exception as e:
-    print(f"데이터 로드 중 오류 발생: {e}")
-    exit()
-
 file = np.genfromtxt(DATA_PATH, delimiter = ',')
 X = file[:, :-1].astype(np.float32)
 y = file[:, -1].astype(np.float32)
