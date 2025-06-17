@@ -3,6 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@mediapipe/drawing_utils": "^0.3.1675466124",
+    "@mediapipe/hands": "^0.4.1675469240",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.2.0",
@@ -20,7 +22,7 @@
     "start": "concurrently \"npm run react-start\" \"npm run python-start\"",
     "react-start": "react-scripts start",
     "python-start": "python ./src/hand_recognition.py"
-},
+  },
   "eslintConfig": {
     "extends": [
       "react-app",
