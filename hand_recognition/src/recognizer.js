@@ -38,7 +38,9 @@ function HandRecognizer() {
 
     const cam = new window.Camera(videoRef.current, {
       onFrame: async () => {
-        await hands.send({ image: videoRef.current });
+        if (videoRef.current) {
+            await hands.send({ image: videoRef.current });
+          }
       },
       width: 640,
       height: 480,
@@ -80,6 +82,8 @@ function HandRecognizer() {
           setIsCameraActive(false); // 카메라 비활성화
           if (cameraRef.current) {
             cameraRef.current.stop();
+          }else {
+            console.warn("예측 실패. 다음 프레임으로 계속 진행.");
           }
         }
       });
