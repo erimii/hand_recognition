@@ -52,8 +52,8 @@ React + Flask 기반의 손 제스처 인식 웹 애플리케이션입니다.
 ---
 
 ## 화면 예시
-![image](https://github.com/user-attachments/assets/3c6b066d-2854-4362-bc1a-cde42a6bd3ea)
-![image](https://github.com/user-attachments/assets/3a709f69-c886-4f13-b0cd-f636d75b7363)
 
+<img src="https://github.com/user-attachments/assets/3c6b066d-2854-4362-bc1a-cde42a6bd3ea" width="300"/>
 
+<img src="https://github.com/user-attachments/assets/3a709f69-c886-4f13-b0cd-f636d75b7363" width="500"/>
 
